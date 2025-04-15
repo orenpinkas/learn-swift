@@ -109,7 +109,7 @@ struct ContentView: View {
                 
                 
             }
-            .border(.blue)
+            
         }
         .task {
             try? Tips.configure()
