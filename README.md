@@ -6,3 +6,6 @@ Following the Udemy course [iOS 18, SwiftUI 6, & Swift 6: Build iOS Apps From Sc
 
 ##### Project 2 - JPApexPredators
 ![JPApexPredators Showcase GIF](https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExbG5sMjc2YzFiYXdsOXQ0aGkwZGh1cDN2cHV2dnhjczBpZWZiNnF4YSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Pp3VmA4G8PUkrAircU/giphy.gif)
+
+##### Project 3 - Breaking Bad Quotes
+![BBQuotes Showcase GIF](https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExb2c3dnhhcDBuOW50MnJqd210Zmtwd2RlN2t6czB0MGE2OXJyZmM3OCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/VjNzmzXpqh4Wk6Rptp/giphy.gif)
