@@ -18,13 +18,12 @@ struct ContentView: View {
     var filteredDinos: [ApexPredator] {
         predators.filter(by: filterType)
         predators.sort(by: alphabetical)
+        
         return predators.search(for: searchText)
     }
     
     var body: some View {
         NavigationStack {
-            
-            
             List(filteredDinos) { predator in
                 NavigationLink {
                     PredatorDetail(predator: predator, position: .camera(MapCamera(centerCoordinate: predator.location, distance: 30000)))

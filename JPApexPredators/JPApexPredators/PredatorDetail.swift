@@ -13,11 +13,12 @@ struct PredatorDetail: View {
     @State var predator: ApexPredator
     @State var position: MapCameraPosition
     @Namespace var namespace
-    
+
     var body: some View {
         GeometryReader { geo in
             ScrollView {
                 ZStack(alignment: .bottomTrailing) {
+
                     Image(predator.type.rawValue)
                         .resizable()
                         .scaledToFit()
@@ -29,16 +30,23 @@ struct PredatorDetail: View {
                                 ], startPoint: .top, endPoint: .bottom)
                         }
 
-                    Image(predator.image)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(
-                            width: geo.size.width / 1.5,
-                            height: geo.size.height / 3.7
-                        )
-                        .offset(y: 20)
-                        .scaleEffect(x: -1)
-                        .shadow(color: .black, radius: 7)
+                    NavigationLink {
+                        Image(predator.image)
+                            .resizable()
+                            .scaledToFit()
+                    } label: {
+                        Image(predator.image)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(
+                                width: geo.size.width / 1.5,
+                                height: geo.size.height / 3.7
+                            )
+                            .offset(y: 20)
+                            .scaleEffect(x: -1)
+                            .shadow(color: .black, radius: 7)
+                            
+                    }
                 }
 
                 VStack {

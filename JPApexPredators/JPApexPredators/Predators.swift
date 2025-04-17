@@ -10,6 +10,7 @@ import Foundation
 class Predators {
     var allApexPredators: [ApexPredator] = []
     var apexPredators: [ApexPredator] = []
+
     
     init() {
         decodeApexPredatorData()
