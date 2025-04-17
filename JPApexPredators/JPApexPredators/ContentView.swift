@@ -18,37 +18,42 @@ struct ContentView: View {
     var filteredDinos: [ApexPredator] {
         predators.filter(by: filterType)
         predators.sort(by: alphabetical)
-        
         return predators.search(for: searchText)
     }
     
     var body: some View {
         NavigationStack {
-            List(filteredDinos) { predator in
-                NavigationLink {
-                    PredatorDetail(predator: predator, position: .camera(MapCamera(centerCoordinate: predator.location, distance: 30000)))
-                } label: {
-                    HStack {
-                        Image(predator.image)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 100, height: 100)
-                            .shadow(color: .white, radius: 1)
+            List {
+                ForEach(filteredDinos) { predator in
+                    NavigationLink {
+                        PredatorDetail(predator: predator, position: .camera(MapCamera(centerCoordinate: predator.location, distance: 30000)))
+                    } label: {
+                        HStack {
+                            Image(predator.image)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 100, height: 100)
+                                .shadow(color: .white, radius: 1)
                             
-                        VStack(alignment: .leading) {
-                            Text(predator.name)
-                                .fontWeight(.bold)
-                            
-                            Text(predator.type.rawValue.capitalized)
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .padding(.horizontal, 13)
-                                .padding(.vertical, 5)
-                                .background(predator.type.background)
-                                .clipShape(Capsule())
+                            VStack(alignment: .leading) {
+                                Text(predator.name)
+                                    .fontWeight(.bold)
+                                
+                                Text(predator.type.rawValue.capitalized)
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .padding(.horizontal, 13)
+                                    .padding(.vertical, 5)
+                                    .background(predator.type.background)
+                                    .clipShape(Capsule())
+                            }
                         }
                     }
                 }
+                .onDelete(perform: { indexSet in
+                    let predatorsToRemove = indexSet.map {filteredDinos[$0]}
+                    predators.remove(predatorsToRemove)
+                })
             }
             .navigationTitle("Apex Predators")
             .searchable(text: $searchText)
@@ -65,7 +70,7 @@ struct ContentView: View {
                 }
                 
                 ToolbarItem(placement: .topBarTrailing) {
-                    ExtractedView(filterType: $filterType)
+                    FilterMenu(filterType: $filterType)
                 }
             }
             
@@ -78,17 +83,4 @@ struct ContentView: View {
     ContentView()
 }
 
-struct ExtractedView: View {
-    @Binding var filterType: APType
-    var body: some View {
-        Menu {
-            Picker("Filter", selection: $filterType.animation()) {
-                ForEach(APType.allCases) { type in
-                    Label(type.rawValue.capitalized, systemImage: type.icon)
-                }
-            }
-        } label: {
-            Image(systemName: "slider.horizontal.3")
-        }
-    }
-}
+
