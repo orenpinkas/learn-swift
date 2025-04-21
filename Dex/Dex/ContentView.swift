@@ -66,10 +66,14 @@ struct ContentView: View {
                                 PokemonDetail()
                                     .environmentObject(pokemon)
                             } label: {
-                                AsyncImage(url: pokemon.sprite) { image in
-                                    image
-                                } placeholder: {
-                                    ProgressView()
+                                if pokemon.sprite == nil {
+                                    AsyncImage(url: pokemon.spriteURL) { image in
+                                        image
+                                    } placeholder: {
+                                        ProgressView()
+                                    }
+                                } else {
+                                    pokemon.spriteImage
                                 }
 
                                 VStack(alignment: .leading) {
@@ -179,14 +183,32 @@ struct ContentView: View {
                     pokemon.specialAttack = fetchedPokemon.specialAttack
                     pokemon.specialDefense = fetchedPokemon.specialDefense
                     pokemon.speed = fetchedPokemon.speed
-                    pokemon.sprite = fetchedPokemon.sprite
-                    pokemon.shiny = fetchedPokemon.shiny
-
+                    pokemon.spriteURL = fetchedPokemon.spriteURL
+                    pokemon.shinyURL = fetchedPokemon.shinyURL
+                    
                     try viewContext.save()
 
                 } catch {
                     print(error)
                 }
+            }
+            
+            storeSprites()
+        }
+    }
+    
+    func storeSprites() {
+        Task {
+            do {
+                for pokemon in all {
+                    pokemon.sprite = try await URLSession.shared.data(from: pokemon.spriteURL!).0
+                    pokemon.shiny = try await URLSession.shared.data(from: pokemon.shinyURL!).0
+                    try viewContext.save()
+                    
+                    print("Sprites stored: \(pokemon.id) \(pokemon.name?.capitalized)")
+                }
+            } catch {
+                print(error)
             }
         }
     }
@@ -205,3 +227,4 @@ private let itemFormatter: DateFormatter = {
         \.managedObjectContext,
         PersistenceController.preview.container.viewContext)
 }
+

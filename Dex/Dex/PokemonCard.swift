@@ -12,7 +12,7 @@ struct PokemonCard: View {
 
     var body: some View {
 
-        AsyncImage(url: pokemon.sprite) { image in
+        AsyncImage(url: pokemon.spriteURL) { image in
             image
         } placeholder: {
             ProgressView()

@@ -12,26 +12,37 @@ struct PokemonDetail: View {
     @EnvironmentObject private var pokemon: Pokemon
     @State private var showShiny = false
 
-    
     var body: some View {
         GeometryReader { geo in
             ScrollView {
                 ZStack {
-                    
+
                     Image(pokemon.background)
                         .resizable()
                         .scaledToFit()
                         .shadow(color: .black, radius: 6)
 
-                    AsyncImage(url: pokemon.sprite) { image in
-                        image
+                    if pokemon.sprite == nil || pokemon.shiny == nil {
+                        AsyncImage(
+                            url: showShiny
+                                ? pokemon.shinyURL : pokemon.spriteURL
+                        ) { image in
+                            image
+                                .interpolation(.none)
+                                .resizable()
+                                .scaledToFit()
+                                .padding(.top, 50)
+                                .shadow(color: .black, radius: 6)
+                        } placeholder: {
+                            ProgressView()
+                        }
+                    } else {
+                        (showShiny ? pokemon.shinyImage : pokemon.spriteImage)
                             .interpolation(.none)
                             .resizable()
                             .scaledToFit()
                             .padding(.top, 50)
                             .shadow(color: .black, radius: 6)
-                    } placeholder: {
-                        ProgressView()
                     }
                 }
 
@@ -67,8 +78,26 @@ struct PokemonDetail: View {
                 }
                 .padding()
 
+                Text("Stats")
+                    .font(.title)
+                    .padding(.bottom, -7)
+                Stats(pokemon: pokemon)
+
             }
             .navigationTitle(pokemon.name!.capitalized)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showShiny.toggle()
+                    } label: {
+                        Image(
+                            systemName: showShiny
+                                ? "wand.and.stars" : "wand.and.stars.inverse"
+                        )
+                        .tint(showShiny ? .yellow : .primary)
+                    }
+                }
+            }
         }
 
     }
