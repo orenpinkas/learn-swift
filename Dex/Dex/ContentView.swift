@@ -12,6 +12,10 @@ struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
 
     @FetchRequest<Pokemon>(
+        sortDescriptors: []
+    ) private var all
+    
+    @FetchRequest<Pokemon>(
         sortDescriptors: [SortDescriptor(\.id)],
         animation: .default
     ) private var pokedex
@@ -29,81 +33,142 @@ struct ContentView: View {
                 format: "name CONTAINS[c] %@", searchText)
             predicates.append(predicate)
         }
-        
+
         if showFavorites {
             let predicate = NSPredicate(format: "favorite == %d", true)
             predicates.append(predicate)
         }
-        
 
         return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
     }
 
     var body: some View {
-        NavigationStack {
-            List {
-                ForEach(pokedex) { pokemon in
-                    NavigationLink {
-                        Text(pokemon.name ?? "no name")
-                    } label: {
-                        ExtractedView(pokemon: pokemon)
+        if all.isEmpty {
+            ContentUnavailableView {
+                Label("No Pokemon", image: .nopokemon)
+            } description: {
+                Text("There aren't any Pokemon yet.\nFetch some Pokemon to get started!")
+            } actions: {
+                Button(
+                    "Fetch Pokemon",
+                    systemImage: "antenna.radiowaves.left.and.right"
+                ) {
+                    getPokemon(from: pokedex.count + 1)
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        } else {
+            NavigationStack {
+                List {
+                    Section {
+                        ForEach(pokedex) { pokemon in
+                            NavigationLink {
+                                PokemonDetail()
+                                    .environmentObject(pokemon)
+                            } label: {
+                                AsyncImage(url: pokemon.sprite) { image in
+                                    image
+                                } placeholder: {
+                                    ProgressView()
+                                }
+
+                                VStack(alignment: .leading) {
+
+                                    HStack {
+                                        Text(pokemon.name!.capitalized)
+                                            .font(.headline)
+                                        if pokemon.favorite {
+                                            Image(systemName: "star.fill")
+                                                .foregroundColor(.yellow)
+                                        }
+                                    }
+
+                                    HStack {
+                                        ForEach(pokemon.types!, id: \.self) {
+                                            type in
+                                            Text(type.capitalized)
+                                                .font(.subheadline)
+                                                .fontWeight(.semibold)
+                                                .foregroundStyle(.black)
+                                                .padding(.horizontal, 13)
+                                                .padding(.vertical, 5)
+                                                .background(
+                                                    Color(type.capitalized)
+                                                )
+                                                .clipShape(.capsule)
+                                        }
+                                    }
+                                }
+                            }
+                            .swipeActions(edge: .leading) {
+                                Button(pokemon.favorite ? "Remove from Favourites" : "Add to Favourites") {
+                                    pokemon.favorite.toggle()
+                                    
+                                    do {
+                                        try viewContext.save()
+                                    } catch {
+                                        print(error)
+                                    }
+                                }
+                                .tint(pokemon.favorite ? .gray : .yellow)
+                            }
+                        }
+
+                    } footer: {
+                        if all.count < 151 {
+                            ContentUnavailableView {
+                                Label("Missing Pokemon", image: .nopokemon)
+                            } description: {
+                                Text(
+                                    "The fetch was interrupted!\nFetch the rest of the Pokemon."
+                                )
+                            } actions: {
+                                Button(
+                                    "Fetch Pokemon",
+                                    systemImage:
+                                        "antenna.radiowaves.left.and.right"
+                                ) {
+                                    getPokemon()
+                                }
+                                .buttonStyle(.borderedProminent)
+                            }
+                        }
                     }
                 }
-                .onDelete(perform: deleteItems)
-            }
-            .navigationTitle("Pokedex")
-            .searchable(text: $searchText, prompt: "Find a Pokemon")
-            .autocorrectionDisabled()
-            .onChange(of: searchText) {
-                pokedex.nsPredicate = dynamicPredicate
-            }
-            .onChange(of: showFavorites) {
-                pokedex.nsPredicate = dynamicPredicate
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
+                .navigationTitle("Pokedex \(pokedex.count)")
+                .searchable(text: $searchText, prompt: "Find a Pokemon")
+                .autocorrectionDisabled()
+                .onChange(of: searchText) {
+                    pokedex.nsPredicate = dynamicPredicate
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showFavorites.toggle()
-                    } label: {
-                        Label("Filter By Favorites", systemImage: showFavorites ? "star.fill" : "star")
-                    }
-                    .tint(.yellow)
+                .onChange(of: showFavorites) {
+                    pokedex.nsPredicate = dynamicPredicate
                 }
-                ToolbarItem {
-                    Button {
-                        getPokemon()
-                    } label: {
-                        Image(systemName: "plus")
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button {
+                            showFavorites.toggle()
+                        } label: {
+                            Label(
+                                "Filter By Favorites",
+                                systemImage: showFavorites
+                                    ? "star.fill" : "star")
+                        }
+                        .tint(.yellow)
                     }
                 }
+
             }
-            Text("Select an item")
         }
+
+
     }
 
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            offsets.map { pokedex[$0] }.forEach(viewContext.delete)
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
-        }
-    }
-
-    private func getPokemon() {
+    private func getPokemon(from id: Int = 1) {
         Task {
-            for id in 1..<152 {
+            for i in id..<152 {
                 do {
-                    let fetchedPokemon = try await fetcher.fetchPokemon(id)
+                    let fetchedPokemon = try await fetcher.fetchPokemon(i)
                     let pokemon = Pokemon(context: viewContext)
                     pokemon.id = fetchedPokemon.id
                     pokemon.name = fetchedPokemon.name
@@ -117,10 +182,6 @@ struct ContentView: View {
                     pokemon.sprite = fetchedPokemon.sprite
                     pokemon.shiny = fetchedPokemon.shiny
 
-                    if pokemon.id % 2 == 0 {
-                        pokemon.favorite = true
-                    }
-                    
                     try viewContext.save()
 
                 } catch {
@@ -129,6 +190,7 @@ struct ContentView: View {
             }
         }
     }
+
 }
 
 private let itemFormatter: DateFormatter = {
@@ -142,43 +204,4 @@ private let itemFormatter: DateFormatter = {
     ContentView().environment(
         \.managedObjectContext,
         PersistenceController.preview.container.viewContext)
-}
-
-struct ExtractedView: View {
-    let pokemon: Pokemon
-
-    var body: some View {
-
-        AsyncImage(url: pokemon.sprite) { image in
-            image
-        } placeholder: {
-            ProgressView()
-        }
-
-        VStack(alignment: .leading) {
-            
-            HStack {
-                Text(pokemon.name!.capitalized)
-                    .font(.headline)
-                if pokemon.favorite {
-                    Image(systemName: "star.fill")
-                        .foregroundColor(.yellow)
-                }
-            }
-
-            HStack {
-                ForEach(pokemon.types!, id: \.self) { type in
-                    Text(type.capitalized)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.black)
-                        .padding(.horizontal, 13)
-                        .padding(.vertical, 5)
-                        .background(Color(type.capitalized))
-                        .clipShape(.capsule)
-                }
-            }
-        }
-
-    }
 }
