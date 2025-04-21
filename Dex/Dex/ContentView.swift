@@ -139,7 +139,7 @@ struct ContentView: View {
                         }
                     }
                 }
-                .navigationTitle("Pokedex \(pokedex.count)")
+                .navigationTitle("Pokedex")
                 .searchable(text: $searchText, prompt: "Find a Pokemon")
                 .autocorrectionDisabled()
                 .onChange(of: searchText) {
