@@ -12,3 +12,5 @@ Following the Udemy course [iOS 18, SwiftUI 6, & Swift 6: Build iOS Apps From Sc
 
 ##### Project 4 - Pokedex
 ![Pokedex GIF](https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExaXBwZGlkdm96MWVwY3V3Y2VrNHIwczdiYnV5b2lxbW1menUzbDdsciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/yu75gtTXhy5u5q0vkH/giphy.gif)
+
+![Pokedex widgets GIF](https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExdjI1bjZtdnBybnNwcGNhYXh3eGV0bmRqaHhoOHV2OGdkMGw0eW1tZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/HnbpnCKO5CYn1tmqXM/giphy.gif)
