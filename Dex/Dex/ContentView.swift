@@ -11,28 +11,20 @@ import SwiftUI
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
 
-    @Query(sort: \Pokemon.id, animation: .default) private var pokedex: [Pokemon]
+    @Query(sort: \Pokemon.id, animation: .default) private var pokedex:
+        [Pokemon]
 
     @State private var searchText = ""
     @State private var showFavorites = false
 
     let fetcher = FetchService()
 
-    private var dynamicPredicate: NSPredicate {
-        var predicates: [NSPredicate] = []
-
-        if !searchText.isEmpty {
-            let predicate = NSPredicate(
-                format: "name CONTAINS[c] %@", searchText)
-            predicates.append(predicate)
+    private var dynamicPredicate: Predicate<Pokemon> {
+        #Predicate<Pokemon> { pokemon in
+            (!showFavorites || pokemon.favorite)
+                && (searchText.isEmpty
+                    || pokemon.name.localizedStandardContains(searchText))
         }
-
-        if showFavorites {
-            let predicate = NSPredicate(format: "favorite == %d", true)
-            predicates.append(predicate)
-        }
-
-        return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
     }
 
     var body: some View {
@@ -40,7 +32,9 @@ struct ContentView: View {
             ContentUnavailableView {
                 Label("No Pokemon", image: .nopokemon)
             } description: {
-                Text("There aren't any Pokemon yet.\nFetch some Pokemon to get started!")
+                Text(
+                    "There aren't any Pokemon yet.\nFetch some Pokemon to get started!"
+                )
             } actions: {
                 Button(
                     "Fetch Pokemon",
@@ -54,12 +48,15 @@ struct ContentView: View {
             NavigationStack {
                 List {
                     Section {
-                        ForEach(pokedex) { pokemon in
+                        ForEach(
+                            (try? pokedex.filter(dynamicPredicate)) ?? pokedex
+                        ) { pokemon in
                             NavigationLink {
                                 PokemonDetail(pokemon: pokemon)
                             } label: {
                                 if pokemon.sprite == nil {
-                                    AsyncImage(url: pokemon.spriteURL) { image in
+                                    AsyncImage(url: pokemon.spriteURL) {
+                                        image in
                                         image
                                     } placeholder: {
                                         ProgressView()
@@ -97,9 +94,13 @@ struct ContentView: View {
                                 }
                             }
                             .swipeActions(edge: .leading) {
-                                Button(pokemon.favorite ? "Remove from Favourites" : "Add to Favourites") {
+                                Button(
+                                    pokemon.favorite
+                                        ? "Remove from Favourites"
+                                        : "Add to Favourites"
+                                ) {
                                     pokemon.favorite.toggle()
-                                    
+
                                     do {
                                         try modelContext.save()
                                     } catch {
@@ -134,10 +135,13 @@ struct ContentView: View {
                 .navigationTitle("Pokedex")
                 .searchable(text: $searchText, prompt: "Find a Pokemon")
                 .autocorrectionDisabled()
+                .animation(.default, value: searchText)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button {
-                            showFavorites.toggle()
+                            withAnimation {
+                                showFavorites.toggle()
+                            }
                         } label: {
                             Label(
                                 "Filter By Favorites",
@@ -146,16 +150,22 @@ struct ContentView: View {
                         }
                         .tint(.yellow)
                     }
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button {
+                            storeSprites()
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                    }
                 }
 
             }
         }
 
-
     }
 
     private func getPokemon(from id: Int = 1) {
-        Task {
+        Task { @MainActor in
             for i in id..<152 {
                 do {
                     let fetchedPokemon = try await fetcher.fetchPokemon(i)
@@ -164,20 +174,26 @@ struct ContentView: View {
                     print(error)
                 }
             }
-            
+
             storeSprites()
         }
     }
-    
+
     func storeSprites() {
-        Task {
+        Task { @MainActor in
             do {
                 for pokemon in pokedex {
-                    pokemon.sprite = try await URLSession.shared.data(from: pokemon.spriteURL).0
-                    pokemon.shiny = try await URLSession.shared.data(from: pokemon.shinyURL).0
+                    pokemon.sprite = try await URLSession.shared.data(
+                        from: pokemon.spriteURL
+                    ).0
+                    pokemon.shiny = try await URLSession.shared.data(
+                        from: pokemon.shinyURL
+                    ).0
                     try modelContext.save()
-                    
-                    print("Sprites stored: \(pokemon.id) \(pokemon.name.capitalized)")
+
+                    print(
+                        "Sprites stored: \(pokemon.id) \(pokemon.name.capitalized)"
+                    )
                 }
             } catch {
                 print(error)
@@ -198,4 +214,3 @@ private let itemFormatter: DateFormatter = {
     ContentView()
         .modelContainer(PersistenceController.preview)
 }
-
